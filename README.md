@@ -30,6 +30,11 @@ cd aegis
 3) Run locally: flask run
 Requires Python, Flask, and standard data science packages. Data is loaded from local CSV and GeoJSON files.
 
+📖 Citation
+
+If you use Aegis, please cite:
+Apostolaki, S. (2025). Contribution to the revised Eurocode 8 and seismic risk applications for urban environment and critical facilities. PhD Thesis, Aristotle University of Thessaloniki.
+
 ⚠️ Disclaimer
 
 The Aegis application is intended solely for informational purposes. The data, analyses, and results provided through the platform are not suitable for, nor should they be used in, the seismic design or structural safety assessment of buildings or infrastructure. Users should consult appropriate codes and standards for structural design.
