@@ -1,0 +1,14 @@
+id,name
+1,Building
+2,Roadway
+3,Railway
+4,Bridge
+5,Tunnel
+6,Port
+7,Airport
+8,Water system
+9,Waste
+10,Oil system
+11,Natural Gas system
+12,Electric Power system
+13,Communication System
