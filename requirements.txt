@@ -1,0 +1,12 @@
+flask
+pandas
+numpy
+jinja2
+geopandas
+matplotlib
+folium
+openpyxl
+shapely
+scipy
+gunicorn
+requests
