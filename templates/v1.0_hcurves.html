@@ -1,0 +1,692 @@
+{% extends 'v1.0_seismic_hazard.html' %}
+
+{% block title %} Seismic Hazard Curves - {{ super() }}{% endblock %}
+
+{% block content %}
+<!-- Banner content -->
+<div
+  id="banner"
+  style="
+    height: 10vh;
+    width: 100%;
+    background-color: #cf6f4f;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  "
+>
+  <h1 style="color: #fff; text-align: center; margin: 0">
+    Seismic Hazard Curves
+  </h1>
+
+
+  <!-- Logo -->
+  <img
+    src="../images/Aegis_logo.png"
+    alt="Logo"
+    style="
+      height: 9vh;
+      position: absolute;
+      right: 5vh;
+      z-index: 2;
+    "
+  />
+</div>
+
+<!-- Main content -->
+<div
+  id="content"
+  style="
+    display: flex;
+    height: 75vh;
+    justify-content: space-evenly;
+    align-items: flex-start;
+    background-color: #fefdfc;
+    flex-wrap: wrap;
+    margin-top: 8vh;
+    z-index: 1;
+  "
+>
+  <!-- Left-side area-->
+  <div
+    id="left-content"
+    style="flex: 0.5; padding: 3vh; height: 100%; font-size: clamp(1.5vh, 1vw, 2rem); color: #241f25; background-color: #e6b178; display: flex; flex-direction: column;">
+    <p>
+        Seismic hazard curves indicate the relationship between a ground motion parameter and its annual probability of exceedance, i.e. its return period, RP. 
+        These curves are computed at the soil surface, accounting for local site effects.
+    </p>
+    <em style="font-size: 0.85em; color: #444;">
+        📍 Click on any point on the map, and adjust parameters to view the hazard curve(s).
+    </em>
+
+    <!-- Parameter Section -->
+    <div
+      id="parameters"
+      style="width: 100%; flex-shrink: 0;"
+    >
+      <h3>Coordinates</h3>
+
+      <!-- Longitude Input -->
+      <label for="longitude">Longitude:</label>
+      <input
+        type="float"
+        id="longitude"
+        name="longitude"
+        placeholder="Enter"
+        style="
+          width: 25%;
+          background-color: #fefdfc;
+          border: 2px solid #cf6f4f;
+          color: #241f25;
+          margin-bottom: 8px;
+        "
+      />
+
+      <!-- Latitude Input -->
+      <label for="latitude">Latitude:</label>
+      <input
+        type="float"
+        id="latitude"
+        name="latitude"
+        placeholder="Enter"
+        style="
+          width: 25%;
+          background-color: #fefdfc;
+          border: 2px solid #cf6f4f;
+          color: #241f25;
+          margin-bottom: 8px;
+        "
+      /><br />
+
+      <h3>Parameters</h3>
+
+      <!-- Site Model
+      <label for="site-model">Site Model:</label>
+      <select
+        id="site-model"
+        name="site-model"
+        style="
+          width: auto;
+          background-color: #fefdfc;
+          border: 2px solid #cf6f4f;
+          color: #241f25;
+          font-size: 16px;
+          margin-bottom: 8px;
+        "
+      >
+        <option value="reference-rock">Reference Rock</option>
+        <option value="esrm20" selected>ESRM20 Site Model</option>
+      </select><br /> -->
+
+      <!-- Intensity Measure -->
+      <label for="intensity-measure">Intensity Measure:</label>
+      <select
+        id="intensity-measure"
+        name="intensity-measure"
+        style="
+          width: auto;
+          background-color: #fefdfc;
+          border: 2px solid #cf6f4f;
+          color: #241f25;
+          margin-bottom: 8px;
+        "
+      >
+        <option value="PGA" selected>PGA</option>
+        <option value="Sa(0.05)">Sa(0.05)</option>
+        <option value="SA(0.1)">Sa(0.10)</option>
+        <option value="SA(0.15)">Sa(0.15)</option>
+        <option value="SA(0.2)">Sa(0.20)</option>
+        <option value="SA(0.25)">Sa(0.25)</option>
+        <option value="SA(0.3)">Sa(0.30)</option>
+        <option value="SA(0.35)">Sa(0.35)</option>
+        <option value="SA(0.4)">Sa(0.40)</option>
+        <option value="SA(0.5)">Sa(0.50)</option>
+        <option value="SA(0.6)">Sa(0.60)</option>
+        <option value="SA(0.1)">Sa(0.75)</option>
+        <option value="Sa(1.0)">Sa(1.00)</option>
+        <option value="Sa(2.0)">Sa(2.00)</option>
+        <option value="Sa(3.0)">Sa(3.00)</option>
+        <option value="Sa(4.0)">Sa(4.00)</option>
+        <option value="Sa(5.0)">Sa(5.00)</option>
+      </select><br />
+
+      <style>
+          /* Style for checkboxes */
+          input[type="checkbox"] {
+              display: none; /* Hide the default checkbox */
+          }
+      
+          /* Style for custom checkboxes */
+          input[type="checkbox"] + label {
+              position: relative;
+              padding-left: 2em;
+              cursor: pointer;
+          }
+      
+          /* Style for checkbox ticks */
+          input[type="checkbox"] + label:before {
+              content: '';
+              position: absolute;
+              left: 0;
+              top: 0;
+              width: 1em;
+              height: 1em;
+              border: 2px solid #cf6f4f;
+              background-color: #fefdfc;
+          }
+      
+          /* Style for checked state - Mean */
+          input[type="checkbox"][value="mean"]:checked + label:before {
+              background-color: #241f25; /* Adjust the alpha channel for opacity */
+          }
+      
+          /* Style for checked state - 0.05 */
+          input[type="checkbox"][value="0.05"]:checked + label:before {
+              background-color: rgba(198, 40, 63, 0.2); /* Adjust the alpha channel for opacity */
+          }
+      
+          /* Style for checked state - 0.16 */
+          input[type="checkbox"][value="0.16"]:checked + label:before {
+              background-color: rgba(198, 40, 63, 0.5); /* Adjust the alpha channel for opacity */
+          }
+      
+          /* Style for checked state - 0.50 (Median) */
+          input[type="checkbox"][value="0.50"]:checked + label:before {
+              background-color: rgba(198, 40, 63, 1); /* Adjust the alpha channel for opacity */
+          }
+      
+          /* Style for checked state - 0.84 */
+          input[type="checkbox"][value="0.84"]:checked + label:before {
+              background-color: rgba(198, 40, 63, 0.5); /* Adjust the alpha channel for opacity */
+          }
+      
+          /* Style for checked state - 0.95 */
+          input[type="checkbox"][value="0.95"]:checked + label:before {
+              background-color: rgba(198, 40, 63, 0.2); /* Adjust the alpha channel for opacity */
+          }
+      </style>
+      
+      <!-- Percentile -->
+      <div id="statistical-measure" style="margin-top: 10px;">
+          <label for="statistical-measure">Statistical Measure (mean values or quantiles): </label><br /><br />
+          <input type="checkbox" id="mean" name="percentile" value="mean" checked>
+          <label for="mean">Mean</label>
+      
+          <input type="checkbox" id="percentile_005" name="percentile" value="0.05">
+          <label for="percentile_005">0.05</label>
+      
+          <input type="checkbox" id="percentile_016" name="percentile" value="0.16">
+          <label for="percentile_016">0.16</label>
+      
+          <input type="checkbox" id="percentile_050" name="percentile" value="0.50">
+          <label for="percentile_050">0.50 (Median)</label>
+      
+          <input type="checkbox" id="percentile_084" name="percentile" value="0.84">
+          <label for="percentile_084">0.84</label>
+      
+          <input type="checkbox" id="percentile_095" name="percentile" value="0.95">
+          <label for="percentile_095">0.95</label>
+      </div><br>
+    
+      
+      <!-- Map Section -->
+      <div id="map" style="width: 100%; flex-grow: 1; height: auto; min-height: 70%; margin-top: 2%; cursor : 'pointer';"></div>
+    </div>
+  </div>
+
+  <!-- Right-side area -->
+<div id="right-content" style="
+  flex: 0.5;
+  padding: 3vh;
+  height: 100%;
+  color: #241f25;
+  background-color: #eed7be;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  overflow: hidden; /* Prevent content overflow */
+">
+
+  <!-- 2D Graph -->
+<div id="graph-container" style="
+        flex: 0.95;
+        width: 100%;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden; 
+    ">
+    <canvas id="hcurve" style="width: 100%; height: 100%;"></canvas>
+
+</div>
+
+    <!-- Download Button (5% Height) -->
+    <div id="download" style="
+        flex: 0.05;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: #cf6f4f;
+    ">
+        <button id="downloadButton" style="
+            padding: 8px 15px;
+            background: white;
+            color: #cf6f4f;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        ">
+            Download
+        </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Include Leaflet, Flask-Leaflet, and Leaflet.Print libraries -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/1.0.2/chartjs-plugin-annotation.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+
+<script>
+// Initialize the map
+var map = L.map('map').setView([40.6401, 22.9444], 10); // Default: Thessaloniki
+
+// Add tile layer
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+}).addTo(map);
+
+// Initialize the marker on Thessaloniki
+var marker = L.marker([40.6401, 22.9444]).addTo(map);
+
+// Function to update coordinates input boxes
+function updateCoordinates(latlng) {
+    document.getElementById('longitude').value = latlng.lng.toFixed(4);
+    document.getElementById('latitude').value = latlng.lat.toFixed(4);
+}
+
+// Function to set marker to a location
+function setMarker(latlng) {
+    marker.setLatLng(latlng);
+    updateCoordinates(latlng);
+    fetchClosestData(latlng.lng, latlng.lat);
+}
+
+// Click event to update marker
+map.on('click', function (e) {
+    setMarker(e.latlng);
+});
+
+// Add search functionality
+var searchControl = L.Control.geocoder({ defaultMarkGeocode: false }).addTo(map);
+searchControl.on('markgeocode', function (e) {
+    map.panTo(e.geocode.center);
+    setMarker(e.geocode.center);
+});
+
+// Define constants for quantiles 
+const quantileMapping = {
+    "mean": "mean", "0.05": "qq05", "0.16": "qq16", "0.50": "qq50", "0.84": "qq84", "0.95": "qq95"
+};
+
+const colorMapping = {
+    "mean": '#241f25', "0.05": 'rgba(198, 40, 63, 0.2)', 
+    "0.16": 'rgba(198, 40, 63, 0.5)', "0.50": 'rgba(198, 40, 63, 1)', 
+    "0.84": 'rgba(198, 40, 63, 0.5)', "0.95": 'rgba(198, 40, 63, 0.2)'
+};
+
+// Function to get selected intensity measure value
+function getSelectedIntensityMeasure() {
+    var intensityMeasureSelect = document.getElementById('intensity-measure');
+    return intensityMeasureSelect.value;
+}
+
+// Function to load and find the closest CSV point to selected coordinates
+async function fetchClosestData(lon, lat) {
+    const intensityMeasure = document.getElementById('intensity-measure').value;
+    const selectedQuantiles = Array.from(document.querySelectorAll('input[name="percentile"]:checked')).map(cb => cb.value);
+    
+    let datasets = [];
+    let xLabels = null; // Ensure xLabels is initialized
+
+    for (const quantile of selectedQuantiles) {
+        const csvData = await fetchCSV(intensityMeasure, quantile);
+        if (!csvData) continue;
+
+        const result = findClosestPoint(csvData, lon, lat);
+        if (result.closestPoint) {
+            if (!xLabels) xLabels = result.xLabels; // Assign xLabels only once
+            datasets.push({
+                label: `${quantile}`, // Only quantile in the legend
+                data: result.closestPoint.slice(3).map(Number), // Ignore lon, lat, and depth
+                borderColor: colorMapping[quantile],
+                borderWidth: 2,
+                fill: false
+            });
+        }
+    }
+
+    if (xLabels) {
+        updateChart(xLabels, datasets);
+    } else {
+        clearChart(); // Clear chart if no valid data
+    }
+}
+
+// Function to fetch CSV file
+async function fetchCSV(intensityMeasure, quantile) {
+    // Map dropdown values to correct filenames
+    const intensityMeasureMapping = {
+        "pga": "PGA",
+        "sa-0.05": "SA(0.05)", "sa-0.10": "SA(0.1)", "sa-0.15": "SA(0.15)",
+        "sa-0.20": "SA(0.2)", "sa-0.25": "SA(0.25)", "sa-0.30": "SA(0.3)",
+        "sa-0.35": "SA(0.35)", "sa-0.40": "SA(0.4)", "sa-0.50": "SA(0.5)",
+        "sa-0.60": "SA(0.6)", "sa-0.75": "SA(0.75)", "sa-1.00": "SA(1.0)",
+        "sa-2.00": "SA(2.0)", "sa-3.00": "SA(3.0)", "sa-4.00": "SA(4.0)",
+        "sa-5.00": "SA(5.0)"
+    };
+
+    // Ensure correct filename format
+    const formattedIntensityMeasure = intensityMeasureMapping[intensityMeasure] || intensityMeasure;
+    const filename = `/static/hcurves_${quantileMapping[quantile]}_${formattedIntensityMeasure}.csv`;
+
+    try {
+        const response = await fetch(filename);
+        if (!response.ok) throw new Error(`Failed to load ${filename}. Status: ${response.status}`);
+        return await response.text();
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
+}
+
+// Function to find the closest data point in the CSV file
+function findClosestPoint(csvData, targetLon, targetLat) {
+    const rows = csvData.trim().split("\n").map(row => row.split(","));
+    const headers = rows[0].slice(3); // Extract X-axis labels (poes- values)
+    
+    let closestPoint = null;
+    let minDistance = Infinity;
+
+    for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        const lon = parseFloat(row[0]);
+        const lat = parseFloat(row[1]);
+
+        if (!isNaN(lon) && !isNaN(lat)) {
+            const distance = Math.sqrt((lon - targetLon) ** 2 + (lat - targetLat) ** 2);
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestPoint = row;
+            }
+        }
+    }
+    
+    return { closestPoint, xLabels: headers.map(label => label.replace("poe-", "")) };
+}
+
+// Chart instance
+let chartInstance = null;
+
+
+// Adjustable fonts
+function getResponsiveFontSize(baseSize) {
+    return Math.max(window.innerHeight * (baseSize / 100), 10); // Ensures a minimum readable size
+}
+
+// Function to update the chart with new data
+function updateChart(xLabels, datasets) {
+    if (!xLabels || datasets.length === 0) return;
+
+    const ctx = document.getElementById('hcurve').getContext('2d');
+
+    if (chartInstance) {
+        chartInstance.destroy();
+    }
+
+    // Map dropdown values to correct filenames
+    const intensityMeasureAxisTitleMapping = {
+        "pga": "PGA",
+        "sa-0.05": "SA(0.05s)", 
+        "sa-0.10": "SA(0.1s)", 
+        "sa-0.15": "SA(0.15s)",
+        "sa-0.20": "SA(0.2s)", 
+        "sa-0.25": "SA(0.25s)", 
+        "sa-0.30": "SA(0.3s)",
+        "sa-0.35": "SA(0.35s)", 
+        "sa-0.40": "SA(0.4s)", 
+        "sa-0.50": "SA(0.5s)",
+        "sa-0.60": "SA(0.6s)", 
+        "sa-0.75": "SA(0.75s)", 
+        "sa-1.00": "SA(1s)",
+        "sa-2.00": "SA(2s)", 
+        "sa-3.00": "SA(3s)", 
+        "sa-4.00": "SA(4s)",
+        "sa-5.00": "SA(5s)"
+    };
+
+    // Define return periods and exceedance probabilities
+    var horizontalLinesData = [0.00989, 0.005, 0.002103, 0.001025, 0.0004, 0.0002];
+    var returnPeriods = [101, 200, 476, 976, 2500, 5000];
+
+    // Get the selected intensity measure
+    const selectedIntensityMeasure = document.getElementById('intensity-measure').value;
+    const xAxisTitle = intensityMeasureAxisTitleMapping[selectedIntensityMeasure] || selectedIntensityMeasure;
+
+    chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: xLabels,
+            datasets: datasets.map(dataset => ({
+                ...dataset,
+                pointStyle: 'circle', // Ensure markers are circles
+                pointRadius: 2, //  Set small marker size
+                pointBackgroundColor: dataset.borderColor, //  Match marker color with line
+                pointBorderWidth: 1
+            }))
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            elements: {
+                point: {
+                    radius: 3, // Small marker dots
+                    hitRadius: 5, // Slightly larger hover effect
+                    hoverRadius: 5, // Make points easier to hover over
+                }
+            },
+            layout: {
+                padding: {
+                    left: 10,
+                    right: 10,
+                    top: 10,
+                    bottom: 10,
+                },
+            },
+            elements: {
+                point: {
+                    radius: 0,
+                },
+            },
+            scales: {
+                x: { 
+                    type: 'logarithmic',
+                    min: 0.01,  // Adjusted min value for better visibility
+                    max: 10,
+                    title: {
+                        display: true,
+                        text: xAxisTitle + ' (g)',
+                        color: '#241f25',
+                        font: { size: getResponsiveFontSize(1.8), weight: 'bold' }
+                    },
+                    ticks: { 
+                        color: '#241f25',  // Sets tick color to dark gray/black
+                        font: {size: getResponsiveFontSize(1.8)}, 
+                        callback: function(value) {
+                            return value; // Ensures normal numbers (not scientific notation)
+                        }
+                    }
+                },
+                y: { 
+                    type: 'logarithmic',
+                    min: 0.0001,  // Adjusted min value for better visibility
+                    max: 1,
+                    title: {
+                        display: true,
+                        text: 'Annual Probability of Exceedance',
+                        color: '#241f25',
+                        font: {
+                            size: getResponsiveFontSize(1.8),
+                            weight: 'bold',
+                            color: '#241f25'
+                        },
+                    },
+                    ticks: { 
+                        color: '#241f25',  // Sets tick color to dark gray/black
+                        font: { size: getResponsiveFontSize(1.8) }, 
+                        callback: function(value) {
+                            return value; // Ensures normal numbers (not scientific notation)
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'bottom', // Keep legend at the bottom
+                    align: 'start', // Align legend items to the left
+                    labels: {
+                        generateLabels: function(chart) {
+                            let labels = Chart.defaults.plugins.legend.labels.generateLabels(chart);
+                            labels.unshift({ // Add a fake label as the first item
+                                text: "Statistical measure:",
+                                fillStyle: 'transparent', // Make it invisible
+                                hidden: false,
+                                lineWidth: 0
+                            });
+                            return labels;
+                        },
+                        boxWidth: 10, // Make legend markers smaller
+                        usePointStyle: true, // Use circles instead of squares
+                        pointStyle: 'circle', // Ensure markers are circles
+                        font: {
+                            size: getResponsiveFontSize(1.8),
+                            color: '#241f25'
+                        },
+                    }
+                },
+                annotation: {
+                    annotations: horizontalLinesData.map((value, index) => {
+                        return {
+                            type: 'line',
+                            mode: 'horizontal',
+                            scaleID: 'y',
+                            value: value,
+                            borderDash: [5, 5],
+                            label: {
+                                content: 'RP = ' + returnPeriods[index] + 'y',
+                                enabled: true,
+                                position: 'end',
+                                font: {
+                                    size: getResponsiveFontSize(1.2),
+                                    color: '#c6283d',
+                                },
+                            },
+                        };
+                    }),
+                },
+                tooltip: {
+                    callbacks: {
+                      title: function(context) {
+                        return ''; // Remove default title (x-value)&#8203;:contentReference[oaicite:2]{index=2}
+                        },
+                        label: function (context) {
+                            let xValue = context.parsed.x.toFixed(2); // Ensure formatted number
+                            let yValue = context.parsed.y.toFixed(4); // Show scientific notation for probabilities
+                            return `${getSelectedIntensityMeasure()} = ${xValue} g -> p_annual = ${yValue}`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+
+// Function to clear the chart when no valid data is found
+function clearChart() {
+    if (chartInstance) {
+        chartInstance.destroy();
+        chartInstance = null;
+    }
+}
+
+// Attach event listeners to checkboxes to update chart dynamically
+document.querySelectorAll('input[name="percentile"]').forEach(cb => {
+    cb.addEventListener('change', () => {
+        setMarker(marker.getLatLng()); // Refresh data when selection changes
+    });
+});
+
+// Attach event listener to intensity measure dropdown
+document.getElementById('intensity-measure').addEventListener('change', () => {
+    chartInstance.options.scales.x.title.text = getSelectedIntensityMeasure() + ' (g)';
+    chartInstance.update();
+});
+
+// Initial Fetch for the default point
+setMarker(marker.getLatLng());
+
+// Download button functionality
+document.getElementById("downloadButton").addEventListener("click", function() {
+
+    const intensityMeasureAxisTitleMapping = {
+            "pga": "PGA",
+            "sa-0.05": "SA(0.05s)", 
+            "sa-0.10": "SA(0.1s)", 
+            "sa-0.15": "SA(0.15s)",
+            "sa-0.20": "SA(0.2s)", 
+            "sa-0.25": "SA(0.25s)", 
+            "sa-0.30": "SA(0.3s)",
+            "sa-0.35": "SA(0.35s)", 
+            "sa-0.40": "SA(0.4s)", 
+            "sa-0.50": "SA(0.5s)",
+            "sa-0.60": "SA(0.6s)", 
+            "sa-0.75": "SA(0.75s)", 
+            "sa-1.00": "SA(1s)",
+            "sa-2.00": "SA(2s)", 
+            "sa-3.00": "SA(3s)", 
+            "sa-4.00": "SA(4s)",
+            "sa-5.00": "SA(5s)"
+        };
+
+    var canvas = document.getElementById("hcurve");
+    var imageUrl = canvas.toDataURL("image/png");
+
+    let selectedIM = document.getElementById("intensity-measure").value; 
+    let formattedIM = intensityMeasureAxisTitleMapping[selectedIM] || selectedIM; // ✅ Use mapping
+
+    let filename = `Aegis_hcurves_${formattedIM}.png`; // ✅ Now uses correct mapped name
+
+    var link = document.createElement("a");
+    link.href = imageUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+});
+</script>
+
+{% endblock %}

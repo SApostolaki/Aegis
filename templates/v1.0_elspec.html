@@ -1,0 +1,289 @@
+{% extends 'v1.0_seismic_hazard.html' %}
+
+{% block title %} Elastic response spectrum - {{ super() }}{% endblock %}
+
+{% block content %}
+<!-- Banner -->
+<div id="banner" style="
+  height: 10vh;
+  width: 100%;
+  background-color: #cf6f4f;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+">
+  <h1 style="color: #fff; text-align: center; margin: 0">EC8:2004 Elastic Response Spectrum</h1>
+  <img src="../images/Aegis_logo.png" alt="Logo" style="height: 9vh; position: absolute; right: 5vh; z-index: 2;" />
+</div>
+
+<!-- Main Content -->
+<div
+  id="content"
+  style="
+    display: flex;
+    height: 75vh;
+    justify-content: space-evenly;
+    align-items: flex-start;
+    background-color: #fefdfc;
+    flex-wrap: wrap;
+    margin-top: 8vh;
+    z-index: 1;
+  "
+>
+  <!-- Left Panel -->
+  <div
+    id="left-content"
+    style="flex: 0.5; padding: 3vh; height: 100%; display: flex; flex-direction: column; background-color: #e6b178; color: #241f25; font-size: clamp(1.5vh, 1vw, 2rem);">
+    <p>
+      Elastic response spectra are used to estimate the peak response of all possible linear single-degree-of-freedom (SDOF) systems forced by the same ground motion. 
+      This tool calculates the Type 1 horizontal elastic response spectrum of the current Eurocode 8.
+    </p>
+    <em style="font-size: 0.85em; color: #444;">
+      📍 Click on the map to set coordinates. The soil type will be auto-filled and can be adjusted to generate the response spectrum.
+    </em>
+
+    <div id="parameters" style="width: 100%; flex: 0 1 auto; font-size: clamp(1.5vh, 1vw, 2rem);">
+      <h4>Coordinates</h4>
+      <!-- Longitude Input -->
+      <label for="longitude">Longitude:</label>
+      <input
+        type="float"
+        id="longitude"
+        name="longitude"
+        placeholder="Enter"
+        style="
+          width: 25%;
+          background-color: #fefdfc;
+          border: 2px solid #cf6f4f;
+          color: #241f25;
+          margin-bottom: 8px;
+        "
+      />
+
+      <!-- Latitude Input -->
+      <label for="latitude">Latitude:</label>
+      <input
+        type="float"
+        id="latitude"
+        name="latitude"
+        placeholder="Enter"
+        style="
+          width: 25%;
+          background-color: #fefdfc;
+          border: 2px solid #cf6f4f;
+          color: #241f25;
+          margin-bottom: 8px;
+        "
+      /><br />
+
+      <h4>Parameters</h4>
+      <p style="margin-bottom: 8px;">
+        Seismic Zone: <span id="zone">–</span>
+        &nbsp; → &nbsp;
+        PGA: <span id="pga">–</span> g
+      </p>
+      <label for="site-class">Soil Class:</label>
+      <select id="site-class" >
+        <option value="A">A</option>
+        <option value="B">B</option>
+        <option value="C">C</option>
+        <option value="D">D</option>
+        <option value="E">E</option>
+      </select><br><br>
+
+      <div id="map" style="width: 100%; flex-grow: 1; height: auto; min-height: 80%; margin-top: 2%; cursor : 'pointer';"></div>
+    </div>
+  </div>
+
+  <!-- Right Panel -->
+  <div id="right-content" style="
+    flex: 0.5;
+    padding: 3vh;
+    height: 100%;
+    color: #241f25;
+    background-color: #eed7be;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    overflow: hidden; /* Prevent content overflow */
+    ">
+
+    <!-- Graph Container -->
+    <div id="graph-container" style="
+      flex: 0.95;
+      width: 100%;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden; 
+  ">
+  <canvas id="elspec" style="width: 100%; height: 100%;"></canvas>
+
+</div>
+
+    <!-- Download Button -->
+    <div id="download" style="
+      flex: 0.05;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #cf6f4f;
+    ">
+      <button id="downloadButton" style="
+        padding: 8px 15px;
+        background: white;
+        color: #cf6f4f;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      ">Download Graph</button>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+function updateFields(lon, lat) {
+  document.getElementById("longitude").value = lon.toFixed(4);
+  document.getElementById("latitude").value = lat.toFixed(4);
+}
+
+var map = L.map('map').setView([40.6401, 22.9444], 10);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap contributors'
+}).addTo(map);
+var marker = L.marker([40.6401, 22.9444]).addTo(map);
+
+function setMarker(latlng) {
+  marker.setLatLng(latlng);
+  updateFields(latlng.lng, latlng.lat);
+  fetchAndPlot(latlng.lng, latlng.lat);
+}
+
+map.on('click', function(e) {
+  setMarker(e.latlng);
+});
+
+var searchControl = L.Control.geocoder({ defaultMarkGeocode: false }).addTo(map);
+searchControl.on('markgeocode', function(e) {
+  map.panTo(e.geocode.center);
+  setMarker(e.geocode.center);
+});
+
+function fetchAndPlot(lon, lat) {
+  const soilClass = document.getElementById("site-class").value;
+  fetch("/get_spectrum", {
+    method: "POST",
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ lon, lat, soil_class: soilClass })
+  })
+  .then(res => res.json())
+  .then(data => {
+    document.getElementById("zone").textContent = data.zone;
+document.getElementById("pga").textContent = data.pga;
+    document.getElementById("site-class").value = data.default_soil;
+    plotSpectrum(data.T, data.Se);
+  });
+}
+
+function plotSpectrum(T, Se) {
+  const canvas = document.getElementById('elspec');
+  canvas.width = canvas.clientWidth;
+  canvas.height = canvas.clientHeight;
+
+  const ctx = canvas.getContext('2d');
+  if (window.spectrumChart) window.spectrumChart.destroy();
+
+  window.spectrumChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: T,
+      datasets: [{
+        label: 'Elastic Response Spectrum (EC8:2004)',
+        data: Se,
+        borderColor: '#c6283d',
+        borderWidth: 2,
+        pointRadius: 0,
+        pointHoverRadius: 0,
+        fill: false
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        mode: 'index',
+        intersect: false
+      },
+      plugins: {
+        tooltip: {
+          enabled: true,
+          callbacks: {
+            label: function (context) {
+              const T = context.label;
+              const Se = context.raw;
+              return `T = ${T}s, Sₑ(T) = ${Se.toFixed(3)}g`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {type: 'linear',
+          title: { display: true, text: 'Period T (s)' },
+          ticks: {
+            callback: val => Number(val).toFixed(2)
+          }
+        },
+        y: {
+          title: { display: true, text: 'Sₑ(T) [g]' }
+        }
+      }
+    }
+  });
+}
+
+document.getElementById("site-class").addEventListener("change", () => {
+  const lon = parseFloat(document.getElementById("longitude").value);
+  const lat = parseFloat(document.getElementById("latitude").value);
+  if (!isNaN(lon) && !isNaN(lat)) {
+    fetchAndPlot(lon, lat);
+  }
+});
+
+// Initial load
+updateFields(22.9444, 40.6401);
+fetchAndPlot(22.9444, 40.6401);
+
+
+// Download button functionality for EC8:2004 elspec chart
+document.getElementById("downloadButton").addEventListener("click", function () {
+    const canvas = document.getElementById("elspec");
+    const imageUrl = canvas.toDataURL("image/png");
+
+    const lon = document.getElementById("longitude").value || "lon";
+    const lat = document.getElementById("latitude").value || "lat";
+    const filename = `Aegis_elspec_${lon}_${lat}.png`;
+
+    const link = document.createElement("a");
+    link.href = imageUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,211 @@
+{% extends 'v1.0_seismic_risk.html' %}
+{% block title %} Exposure Map - {{ super() }}{% endblock %}
+{% block content %}
+
+<!-- Banner -->
+<div id="banner" style="height: 10vh; width: 100%; background-color: #cf6f4f; position: fixed; top: 0; left: 0; z-index: 1; display: flex; justify-content: center; align-items: center;">
+  <h2 style="color: #fff; text-align: center; margin: 0">Exposure model</h2>
+  <img src="../images/Aegis_logo.png" alt="Logo" style="height: 9vh; position: absolute; right: 5vh; z-index: 2;" />
+</div>
+
+<!-- Main Content -->
+<div id="content" style="display: flex; height: 75vh; justify-content: space-evenly; align-items: flex-start; font-size: clamp(1.5vh, 1vw, 2rem); background-color: #fefdfc; flex-wrap: wrap; margin-top: 8vh; z-index: 1;">
+
+  <!-- Left Side: Filters -->
+  <div id="left-content" style="flex: 0.3; padding: 3vh; height: 100%; color: #241f25; background-color: #e6b178; display: flex; flex-direction: column;">
+    <p>This map shows the locations of important facilities in Greece, categorized by type.</p>
+    <em style="font-size: 0.85em; color: #444;">📍 Click a point for more info. Use the checkboxes to filter by category.</em>
+    <div id="category-filters" style="margin-top: 2vh;"></div>
+  </div>
+
+  <!-- Right Side: Map and Download -->
+  <div id="right-content" style="flex: 0.7; padding: 3vh; height: 100%; background-color: #eed7be; display: flex; flex-direction: column; align-items: center; position: relative;">
+    <div id="map-container" style="flex: 0.95; width: 100%; position: relative; display: flex; flex-direction: column;">
+      <div id="map" style="width: 100%; height: 100%; min-height: 500px;"></div>
+
+      <!-- Legend -->
+      <div id="map-legend" style="
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        background: #AAD3DF;
+        border: 1px solid #ccc;
+        padding: 8px;
+        border-radius: 6px;
+        font-size: 0.85em;
+        box-shadow: 1px 1px 5px rgba(0,0,0,0.2);
+        z-index: 999;
+      ">
+        <p style="margin: 0 0 5px 0; font-weight: bold;">Category</p>
+        <div id="legend-content"></div>
+      </div>
+    </div>
+
+    <!-- Download Button -->
+    <div id="download" style="flex: 0.05; width: 100%; display: flex; justify-content: center; align-items: center; background-color: #cf6f4f;">
+      <button id="downloadButton" onclick="downloadMap()" style="padding: 8px 15px; background: white; color: #cf6f4f; border: none; border-radius: 5px; cursor: pointer; display: flex; align-items: center; gap: 10px;">
+        <span id="buttonText">Download Map</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<script>
+const map = L.map("map", { renderer: L.canvas() }).setView([40.6401, 22.9444], 12);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap contributors'
+}).addTo(map);
+
+const poiLayerGroup = L.layerGroup().addTo(map);
+const categoryLayers = {};
+
+const categoryColors = {
+  "Court buildings": '#b25b00',
+  "Fire department": '#eb950c',
+  "Hospitals": '#eb0c0c',
+  "Oher public buildings": '#984ea3',
+  "Police station": '#296073',
+  "Power Plants": '#ffff33',
+  "Public administration buildings": '#008dcd',
+  "Refineries": '#220862',
+  "Schools": '#00c2a8',
+  "Tax office": '#d5cabd'
+};
+
+function assignColor(category) {
+  return categoryColors[category] || '#000000';
+}
+
+function getMarkerRadius(zoomLevel) {
+  return Math.max(0.05, 4 * (zoomLevel / 10));
+}
+
+function createCategoryFilters() {
+  const container = document.getElementById("category-filters");
+  container.innerHTML = "";
+  Object.keys(categoryLayers).sort().forEach(cat => {
+    const color = assignColor(cat);
+    const id = `chk_${cat.replace(/\s+/g, '_')}`;
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = true;
+    checkbox.id = id;
+    checkbox.dataset.category = cat;
+    checkbox.addEventListener("change", updateLayerVisibility);
+
+    const label = document.createElement("label");
+    label.htmlFor = id;
+    label.innerHTML = `<span style="display:inline-block;width:12px;height:12px;background:${color};margin-right:5px;"></span>${cat}`;
+
+    const div = document.createElement("div");
+    div.style.marginBottom = "0.5em";
+    div.appendChild(checkbox);
+    div.appendChild(label);
+    container.appendChild(div);
+  });
+}
+
+function updateLayerVisibility() {
+  const legendContent = document.getElementById("legend-content");
+  legendContent.innerHTML = "";
+
+  const activeCats = Object.entries(categoryLayers)
+    .filter(([cat, layer]) => {
+      const checkbox = document.querySelector(`input[data-category="${cat}"]`);
+      return checkbox && checkbox.checked;
+    })
+    .map(([cat]) => cat)
+    .sort((a, b) => a.localeCompare(b));
+
+  activeCats.forEach(cat => {
+    const checkbox = document.querySelector(`input[data-category="${cat}"]`);
+    if (checkbox && checkbox.checked) {
+      poiLayerGroup.addLayer(categoryLayers[cat]);
+
+      const color = assignColor(cat);
+      const item = document.createElement("div");
+      item.innerHTML = `<span style="display:inline-block;width:12px;height:12px;margin-right:5px;background:${color};"></span>${cat}`;
+      legendContent.appendChild(item);
+    } else {
+      poiLayerGroup.removeLayer(categoryLayers[cat]);
+    }
+  });
+}
+
+function parseAndRender(csvText) {
+  const rows = csvText.trim().split("\n");
+  const headers = rows[0].split(",").map(h => h.trim().toLowerCase());
+
+  const colIndices = {
+    lat: headers.indexOf("lat"),
+    lon: headers.indexOf("lon"),
+    name: headers.indexOf("name"),
+    type: headers.indexOf("type"),
+    category: headers.indexOf("category")
+  };
+
+  rows.slice(1).forEach(row => {
+    const cols = row.split(",");
+    const lat = parseFloat(cols[colIndices.lat]);
+    const lon = parseFloat(cols[colIndices.lon]);
+    const name = cols[colIndices.name]?.trim();
+    const type = cols[colIndices.type]?.trim();
+    const category = cols[colIndices.category]?.trim();
+
+    if (!lat || !lon || !category) return;
+
+    const color = assignColor(category);
+    const marker = L.circleMarker([lat, lon], {
+      radius: getMarkerRadius(map.getZoom()),
+      fillColor: color,
+      color: "#000",
+      weight: 0.5,
+      fillOpacity: 0.85
+    }).bindPopup(`<strong>${name}</strong><br>Type: ${type}<br>Category: ${category}`);
+
+    if (!categoryLayers[category]) {
+      categoryLayers[category] = L.layerGroup();
+    }
+    categoryLayers[category].addLayer(marker);
+  });
+
+  Object.values(categoryLayers).forEach(layer => poiLayerGroup.addLayer(layer));
+  createCategoryFilters();
+  updateLayerVisibility();
+}
+
+map.on("zoomend", () => {
+  const zoom = map.getZoom();
+  Object.values(categoryLayers).forEach(layerGroup => {
+    layerGroup.eachLayer(layer => {
+      if (layer instanceof L.CircleMarker) {
+        layer.setRadius(getMarkerRadius(zoom));
+      }
+    });
+  });
+});
+
+function downloadMap() {
+  html2canvas(document.getElementById("map-container"), { useCORS: true }).then(canvas => {
+    const link = document.createElement("a");
+    link.href = canvas.toDataURL("image/png");
+    link.download = "Aegis_exposure_map.png";
+    link.click();
+  });
+}
+
+$.ajax({
+  url: "/static/exposure.csv",
+  dataType: "text",
+  success: parseAndRender,
+  error: () => console.error("Could not load exposure CSV.")
+});
+</script>
+
+{% endblock %}

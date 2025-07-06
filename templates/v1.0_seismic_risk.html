@@ -1,0 +1,122 @@
+{% extends 'v1.0_base.html' %} {% block content %}
+<!-- Banner content -->
+<div
+  id="banner"
+  style="
+    height: 10vh;
+    width: 100%;
+    background-color: #cf6f4f;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  "
+>
+  <h1 style="color: #fff; text-align: center; margin: 0">
+    Seismic Risk
+  </h1>
+
+
+  <!-- Logo -->
+  <img
+    src="../images/Aegis_logo.png"
+    alt="Logo"
+    style="
+      height: 9vh;
+      position: absolute;
+      right: 5vh;
+      z-index: 2;
+    " 
+  />
+</div>
+
+<div id="content" style="margin-top: 10vh; padding: 16px; z-index: 1">
+  <h2>Explore Greece's Seismic Risk</h2>
+   <p>
+    <br /><br /><br /><br /><br /><br />
+  </p>
+
+  <!-- Navigation Section -->
+  <div style="display: flex; justify-content: space-evenly; margin-top: 20px">
+    <!-- Hazard Maps -->
+    <a
+      href="{{ url_for('exposure') }}"
+      style="
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 300px;
+        height: 300px;
+        border-radius: 50%;
+        overflow: hidden;
+        outline: 2px solid #241f25;
+        text-decoration: none;
+        position: relative;
+      "
+    >
+        <span
+        style="
+        color: #241f25;
+        font-size: 20px;
+        font-weight: bold;
+        background-color: null;
+        position: absolute; 
+        top: 50%; 
+        left: 50%; 
+        transform: translate(-50%, -50%); 
+        text-align: center;
+        opacity: 1; 
+        z-index: 2;
+      "
+      > Exposure Model</span>
+      <img
+        src="../images/exposure.png"
+        alt="exposure"
+        style="width: 100%; height: 100%; object-fit: cover; opacity: 0.5;"
+      />
+    </a>
+
+    <!-- Fragility Curves -->
+    <a
+      href="{{ url_for('fragility') }}"
+      style="
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 300px;
+        height: 300px;
+        border-radius: 50%;
+        overflow: hidden;
+        outline: 2px solid #241f25;
+        text-decoration: none;
+        position: relative;
+      "
+    >
+        <span
+        style="
+        color: #241f25;
+        font-size: 20px;
+        font-weight: bold;
+        background-color: null;
+        position: absolute; 
+        top: 50%; 
+        left: 50%; 
+        transform: translate(-50%, -50%); 
+        text-align: center;
+        opacity: 1; 
+        z-index: 2;
+      "
+      > Fragility model</span>
+      <img
+        src="../images/plot_vulnerability.png"
+        alt="fragility"
+        style="width: 100%; height: 100%; object-fit: cover; opacity: 0.5;"
+      />
+    </a>
+    
+  </div>
+</div>
+{% endblock %}

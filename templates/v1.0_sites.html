@@ -1,0 +1,173 @@
+{% extends 'v1.0_seismic_hazard.html' %}
+{% block title %} Local Site Conditions - {{ super() }}{% endblock %}
+{% block content %}
+
+<!-- Banner -->
+<div id="banner"
+  style="height: 10vh; width: 100%; background-color: #cf6f4f; position: fixed; top: 0; left: 0; z-index: 1; display: flex; justify-content: center; align-items: center;">
+  <h2 style="color: #fff; text-align: center; margin: 0">Local Site Conditions</h2>
+  <img src="../images/Aegis_logo.png" alt="Logo"
+    style="height: 9vh; position: absolute; right: 5vh; z-index: 2;" />
+</div>
+
+<!-- Main content -->
+<div id="content"
+  style="display: flex; height: 75vh; justify-content: space-evenly; align-items: flex-start; font-size: clamp(1.5vh, 1vw, 2rem); background-color: #fefdfc; flex-wrap: wrap; margin-top: 8vh; z-index: 1;">
+
+  <!-- Left-side -->
+  <div id="left-content"
+    style="flex: 0.3; padding: 3vh; height: 100%; color: #241f25; background-color: #e6b178; display: flex; flex-direction: column;">
+    <p>
+      This map presents local site conditions based on a geospatial dataset, including slope, geological classification,
+      and inferred average shear-wave velocity in the upper 30 meters (V<sub>s30</sub>) based on the 2020 European Seismic
+      Risk Model (ESRM20).
+    </p>
+    <em style="font-size: 0.85em; color: #444;">
+      📍 Click on any point on the map to retrieve slope, geology, and V<sub>s30</sub> at that location.
+    </em>
+  </div>
+
+  <!-- Right-side -->
+  <div id="right-content"
+    style="flex: 0.7; padding: 3vh; height: 100%; color: #241f25; background-color: #eed7be; display: flex; flex-direction: column; align-items: center; position: relative; overflow: visible;">
+
+    <!-- Map & legend wrapper -->
+    <div id="map-wrapper" style="flex: 0.95; width: 100%; position: relative; display: flex; flex-direction: column;">
+      <div id="map" style="width: 100%; height: 100%; min-height: 500px;"></div>
+
+      <!-- Legend -->
+      <div id="legend-container" style="
+          position: absolute;
+          bottom: 10px;
+          right: 10px;
+          background: rgba(255, 255, 255, 0.8);
+          padding: 6px;
+          border-radius: 8px;
+          font-size: 0.85rem;
+          z-index: 1000;">
+        <strong>Vs₃₀ (m/s)</strong><br>
+        <div><span style="background:#fee6a5;width:12px;height:12px;display:inline-block;margin-right:5px;"></span>180–360</div>
+        <div><span style="background:#fe9929;width:12px;height:12px;display:inline-block;margin-right:5px;"></span>360–500</div>
+        <div><span style="background:#c4510b;width:12px;height:12px;display:inline-block;margin-right:5px;"></span>500–800</div>
+        <div><span style="background:#4e1900;width:12px;height:12px;display:inline-block;margin-right:5px;"></span>800–900</div>
+      </div>
+    </div>
+
+    <!-- Download button -->
+    <div id="download"
+      style="flex: 0.05; width: 100%; display: flex; justify-content: center; align-items: center; background-color: #cf6f4f;">
+      <button id="downloadButton" onclick="printMap()" style="padding: 8px 15px; background: white; color: #cf6f4f; border: none; border-radius: 5px; cursor: pointer; display: flex; align-items: center; gap: 10px;">
+        <span id="buttonText">Download Map</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://unpkg.com/leaflet-image/leaflet-image.js"></script>
+
+<script>
+  const map = L.map("map", { renderer: L.canvas() }).setView([40.6401, 22.9444], 10);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+  }).addTo(map);
+
+  L.Control.geocoder({ defaultMarkGeocode: false }).addTo(map);
+
+  const siteLayer = L.layerGroup().addTo(map);
+  let siteConditionData = [];
+
+  function getMarkerRadius(zoomLevel) {
+    return Math.max(0.05, 6 * (zoomLevel / 10));
+  }
+
+  function getVs30Color(vs30) {
+    if (vs30 < 180) return '#999';
+    if (vs30 < 360) return '#fee6a5';
+    if (vs30 < 500) return '#fe9929';
+    if (vs30 < 800) return '#c4510b';
+    if (vs30 < 900) return '#4e1900';
+    return '#000000';
+  }
+
+  function parseAndRenderCSV(csvText) {
+    const rows = csvText.trim().split("\n");
+    const headers = rows[0].split(",").map(h => h.trim().toLowerCase());
+
+    for (let i = 1; i < rows.length; i++) {
+      const cols = rows[i].split(",").map(c => c.trim());
+      const lon = parseFloat(cols[0]);
+      const lat = parseFloat(cols[1]);
+      const slope = parseFloat(cols[2]);
+      const geology = cols[3];
+      const vs30 = parseFloat(cols[4]);
+
+      if (!isNaN(lat) && !isNaN(lon) && !isNaN(vs30)) {
+        const content = `
+          <strong>Slope:</strong> ${slope.toFixed(2)}°<br>
+          <strong>Geology:</strong> ${geology}<br>
+          <strong>Vs₃₀:</strong> ${vs30.toFixed(0)} m/s
+        `;
+
+        const marker = L.circleMarker([lat, lon], {
+          radius: getMarkerRadius(map.getZoom()),
+          fillColor: getVs30Color(vs30),
+          color: "#000",
+          weight: 0.2,
+          fillOpacity: 0.85
+        }).bindPopup(content);
+
+        siteLayer.addLayer(marker);
+      }
+    }
+
+    console.log("Points rendered:", siteConditionData.length);
+  }
+
+  map.on("zoomend", () => {
+    const zoom = map.getZoom();
+    siteLayer.eachLayer(layer => {
+      if (layer instanceof L.CircleMarker) {
+        layer.setRadius(getMarkerRadius(zoom));
+      }
+    });
+  });
+
+  function printMap() {
+    html2canvas(document.getElementById("map-wrapper"), { useCORS: true }).then(function (canvas) {
+      const link = document.createElement("a");
+      link.href = canvas.toDataURL("image/png");
+      link.download = "Aegis_local_site_conditions.png";
+      link.click();
+    });
+  }
+
+  // Optional: test marker to confirm popups work
+  L.circleMarker([40.64, 22.94], {
+    radius: 8,
+    fillColor: '#3388ff',
+    color: '#000',
+    weight: 1,
+    fillOpacity: 0.9
+  }).bindPopup('<b>Test Marker</b><br>This is a hardcoded test point.').addTo(map);
+
+  // Load CSV
+  $.ajax({
+    url: "/static/local_site_conditions.csv",
+    dataType: "text",
+    success: function (csvText) {
+      parseAndRenderCSV(csvText);
+    },
+    error: function () {
+      console.error("Could not load local site condition CSV.");
+    }
+  });
+</script>
+
+{% endblock %}

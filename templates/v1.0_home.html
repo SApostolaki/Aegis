@@ -1,0 +1,131 @@
+{% extends 'v1.0_base.html' %} {% block content %}
+<!-- Banner content -->
+<div
+  id="banner"
+  style="
+    height: 10vh;
+    width: 100%;
+    background-color: #cf6f4f;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  "
+>
+  <h1 style="color: #fff; text-align: center; margin: 0">Home Page</h1>
+
+  <!-- Logo -->
+  <img
+    src="../images/Aegis_logo.png"
+    alt="Logo"
+    style="
+      height: 9vh;
+      position: absolute;
+      right: 5vh;
+      z-index: 2;
+    "
+  />
+</div>
+
+<!-- Main content -->
+<div id="content" style="margin-top: 10vh; padding: 16px; z-index: 1">
+  <h2>About Aegis</h2>
+  <p>
+    Aegis is a web application developed to support the exploration of seismic hazard and risk information. The name “Aegis” was chosen to reflect the platform’s role as an informative tool—offering users a clear view of seismic conditions across different locations. In Greek mythology, the Aegis was the shield of Zeus, symbolizing protection and support. Similarly, this application aims to offer accessible insights based on established models and data, without replacing official assessments or serving as a tool for seismic design.
+    <br /><br /><br /><br /><br />
+  </p>
+
+  <!-- Navigation Section -->
+  <div style="display: flex; justify-content: space-evenly; margin-top: 20px">
+    <!-- Seismic Hazard Link -->
+    <a
+    href="{{ url_for('seismic_hazard') }}"
+    style="
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 600px;
+      height: 300px;
+      border-radius: 15px;
+      overflow: hidden;
+      outline: 2px solid #241f25;
+      background-color: null;
+      text-decoration: none;
+      position: relative; 
+    "
+    >
+    <span
+      style="
+        color: #241f25;
+        font-size: 30px;
+        font-weight: bold;
+        background-color: null;
+        position: absolute; 
+        top: 50%; 
+        left: 50%; 
+        transform: translate(-50%, -50%); 
+        opacity: 1; 
+        z-index: 2;
+      "
+    >Seismic Hazard</span>
+    <img
+      src="../images/seismic_hazard.jpg"
+      alt="shazard"
+      style="
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0.8; 
+      "
+    />
+    </a>
+
+    <!-- Seismic Risk Link -->
+    <a
+      href="{{ url_for('seismic_risk') }}"
+      style="
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 600px;
+        height: 300px;
+        border-radius: 15px;
+        overflow: hidden;
+        outline: 2px solid #241f25;
+        background-color: null;
+        text-decoration: none;
+        position: relative; 
+      "
+    >
+      <span
+      style="
+        color: #241f25;
+        font-size: 30px;
+        font-weight: bold;
+        background-color: null;
+        position: absolute; 
+        top: 50%; 
+        left: 50%; 
+        transform: translate(-50%, -50%); 
+        opacity: 1; 
+        z-index: 2;
+      "
+    >Seismic Risk</span>
+    <img
+      src="../images/seismic_risk.jpg"
+      alt="srisk"
+      style="width: 100%; height: 100%; object-fit: cover; opacity: 0.6;"
+    />
+    </a>
+  </div>
+</div>
+
+<h4><strong>Disclaimer</strong></h4>
+<p><em>
+The Aegis application is intended solely for informational purposes. The data, analyses, and results provided through the platform are not suitable for, nor should they be used in, the seismic design or structural safety assessment of buildings or infrastructure. Users should consult appropriate codes and standards for structural design.
+</em></p>
+
+{% endblock %}

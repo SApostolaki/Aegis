@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Name of the Web App{% endblock %}</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #fefdfc; /* #e1e1e1*/
+        }
+
+        #sidebar {
+            height: 100%;
+            width: 15%; /* Set to x% to be open by default */
+            position: fixed;
+            z-index: 1;
+            top: 0;
+            left: 0;
+            background-color: #241f25 ; /* #0F233F#181825 */
+            overflow-x: hidden;
+            transition: 0.3s;
+            padding-top: 60px;
+            padding-left: 0px;
+        }
+
+        #sidebar a {
+            padding: 8px 8px 8px 8px; /* Adjust the left padding as needed */
+            text-decoration: none;
+            font-size: clamp(1.7vh, 1vw, 2rem);
+            color: #e7b3a2; /* #bbbbbb */
+            display: block;
+            transition: 0.3s;
+            content:  #fefdfc; /* Unicode character for right arrow */
+            margin-right: 5px; /* Adjust the spacing as needed */
+        }
+
+        #sidebar a:hover {
+            color: rgb(254, 253, 252); /*#f1f1f1*/
+        }
+
+        /*Update the styles for the sub-page links*/
+        #sidebar ul ul a {
+            padding: 8px 8px 8px 0px; /* Adjust the left padding as needed */
+            text-decoration: none;
+            font-size: clamp(1.7vh, 1vw, 2rem);
+            color: #e28f73; /* #818181*/
+            display: block;
+            transition: 0.3s;
+        }
+
+        #sidebar .close-btn {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            padding: 16px;
+            font-size: clamp(1.8vh, 1vw, 2rem);
+            cursor: pointer;
+            color: #c6283d;
+            /* text-transform:uppercase; */
+            display: flex;
+            align-items: center; /* Align text and 'X' vertically */
+        }
+
+        #content {
+            margin-left: 0;
+            padding: 16px;
+            transition: margin-left 0.3s;
+        }
+
+        #open-btn {
+            font-size: clamp(4vh, 1vw, 2rem);
+            cursor: pointer;
+            position: fixed;
+            top: 20px;
+            left: 10px;
+            color: rgb(198, 40, 61);
+            z-index: 2; /* Ensure it's above the sidebar */
+        }
+    </style>
+</head>
+
+<body>
+    <div id="content">
+        {% block content %}{% endblock %}
+    </div>
+
+    <div id="open-btn" onclick="toggleNav()">&#9776;</div>
+
+    <script>
+        // Open the sidebar by default
+        window.onload = function() {
+            openNav();
+        };
+    
+        function openNav() {
+        const sidebarWidth = document.getElementById("sidebar").offsetWidth;
+        document.getElementById("sidebar").style.width = "15%";
+        document.getElementById("content").style.marginLeft = "15%";
+        document.getElementById("open-btn").style.display = "none";
+        // Expand "Seismic Hazard" sub-pages by default
+        toggleSeismicHazard();
+        }
+
+        function closeNav() {
+            document.getElementById("sidebar").style.width = "0";
+            document.getElementById("open-btn").style.display = "block";
+            // Add a margin to the content when the sidebar is closed
+            document.getElementById("content").style.marginLeft = "30px"; // Adjust the margin as needed
+        }
+    
+        function toggleNav() {
+            const sidebar = document.getElementById("sidebar");
+            const content = document.getElementById("content");
+            const openBtn = document.getElementById("open-btn");
+            
+            if (sidebar.style.width === "0px" || !sidebar.style.width) {
+                openNav();
+            } else {
+                closeNav();
+            }
+        }
+    
+        // Function to toggle the sub-pages under "Seismic Hazard"
+        function toggleSeismicHazard() {
+        const subPages = document.getElementById("seismic-hazard-subpages");
+        const arrow = document.getElementById("seismic-hazard-arrow");
+        if (subPages.style.display === "none" || !subPages.style.display) {
+            subPages.style.display = "block";
+            // Change arrow to point up when expanded
+            arrow.innerHTML = "&#9650;";
+        } else {
+            subPages.style.display = "none";
+            // Change arrow to point down when collapsed
+            arrow.innerHTML = "&#9660;";
+        }
+    }
+</script>
+    
+<div id="sidebar">
+    <span class="close-btn" onclick="closeNav()">
+        Close &times;
+    </span>
+    <ul>
+        <li><a href="{{ url_for('home') }}">Home</a></li>
+
+        <li>
+            <a href="{{ url_for('elastic_response_spectra') }}" onclick="toggleSeismicHazard()">
+                EC8:2004
+                <span id="seismic-ec8-arrow" style="float: right;">&#9650;</span>
+            </a>
+            <ul id="ec8-subpages">
+                <li><a href="{{ url_for('elastic_response_spectra') }}">Elastic Response Spectra</a></li>
+            </ul>
+        </li>
+
+        <li>
+            <a href="{{ url_for('seismic_hazard') }}" onclick="toggleSeismicHazard()">
+                Seismic Hazard
+                <span id="seismic-hazard-arrow" style="float: right;">&#9650;</span>
+            </a>
+            <ul id="seismic-hazard-subpages">
+                <li><a href="{{ url_for('local_site_conditions') }}">Local Site Conditions</a></li>
+                <li><a href="{{ url_for('hazard_maps') }}">Hazard Maps</a></li>
+                <li><a href="{{ url_for('hazard_curves') }}">Hazard Curves</a></li>
+                <li><a href="{{ url_for('hazard_uhs') }}">Uniform Hazard Spectra</a></li>
+            </ul>
+        </li>
+
+        <li>
+            <a href="{{ url_for('seismic_risk') }}" onclick="toggleSeismicHazard()">
+                Seismic Risk
+                <span id="seismic-risk-arrow" style="float: right;">&#9650;</span>
+            </a>
+            <ul id="seismic-risk-subpages">
+                <li><a href="{{ url_for('exposure') }}">Exposure Model</a></li>
+                <li><a href="{{ url_for('fragility') }}">Fragility Curves</a></li>
+            </ul>
+        </li>
+    </ul>
+</div>
+
+</body>
+</html>

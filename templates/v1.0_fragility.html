@@ -1,0 +1,211 @@
+{% extends 'v1.0_seismic_risk.html' %}
+
+{% block content %}
+<!-- Banner -->
+<div id="banner"
+    style="height: 10vh; width: 100%; background-color: #cf6f4f; position: fixed; top: 0; left: 0; z-index: 1; display: flex; justify-content: center; align-items: center;">
+    <h1 style="color: #fff; text-align: center; margin: 0">Fragility curves</h1>
+    <img src="../images/Aegis_logo.png" alt="Logo" style="height: 10vh; position: absolute; right: 3vh; z-index: 2;" />
+</div>
+
+<!-- Main content -->
+<div id="content"
+    style="display: flex; height: 75vh; justify-content: space-evenly; align-items: flex-start; background-color: #fefdfc; flex-wrap: wrap; margin-top: 8vh; z-index: 1;">
+
+    <!-- Left-side area -->
+    <div id="left-content"
+        style="flex: 0.5; padding: 3vh; height: 100%; display: flex; flex-direction: column; background-color: #e6b178; color: #241f25; font-size: clamp(1.5vh, 1vw, 2rem);">
+
+        <p>Fragility functions describe the probability of exceeding different damage states for a range of ground shaking intensities. </p>
+        <em style="font-size: 0.85em; color: #444;">
+        📍 Select an asset of interest and explore fragility functions available from literature.
+        </em>
+
+        <br />
+        <label for="assetSelect">Asset category:</label>
+        <select id="assetSelect" style="width: auto; background-color: #fefdfc; border: 2px solid #cf6f4f; color: #241f25; margin-bottom: 8px;"></select>
+
+        <label for="modelSelect">Fragility model:</label>
+        <select id="modelSelect" style="width: auto; background-color: #fefdfc; border: 2px solid #cf6f4f; color: #241f25; margin-bottom: 8px;"></select>
+
+        <label for="typologySelect">Typology:</label>
+        <select id="typologySelect" style="width: auto; background-color: #fefdfc; border: 2px solid #cf6f4f; color: #241f25; margin-bottom: 8px;"></select>
+        <br />
+
+        <div id="referenceText" style="font-size: 0.85em; color: #444;"></div>
+    </div>
+
+    <!-- Right-side area -->
+    <div id="right-content" style="flex: 0.5; padding: 3vh; height: 100%; color: #241f25; background-color: #eed7be; display: flex; flex-direction: column; align-items: center; position: relative; overflow: hidden;">
+
+      <!-- 2D Graph -->
+      <div id="graph-container" style="flex: 0.95; width: 100%; position: relative; display: flex; flex-direction: column; overflow: hidden;">
+          <canvas id="hcurve" style="width: 100%; height: 100%;"></canvas>
+      </div>
+
+      <!-- Download Button -->
+      <div id="download" style="flex: 0.05; width: 100%; display: flex; justify-content: center; align-items: center; background-color: #cf6f4f;">
+          <button id="downloadButton" style="padding: 8px 15px; background: white; color: #cf6f4f; border: none; border-radius: 5px; cursor: pointer;">
+              Download
+          </button>
+      </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let assetList = [], modelList = [], typologyList = [], chart, modelRefMap = {}, typologyIMTMap = {}, lastTypologyName = "";
+
+fetch("/asset-model-typology-data")
+    .then(res => res.json())
+    .then(data => {
+        assetList = data.assets;
+        modelList = data.models;
+        typologyList = data.typologies;
+        modelList.forEach(model => modelRefMap[model.id] = model.reference || "");
+        typologyList.forEach(typ => typologyIMTMap[typ.id] = typ.imt);
+        populateAssetDropdown();
+    });
+
+function populateAssetDropdown() {
+    const select = document.getElementById("assetSelect");
+    select.innerHTML = '';
+    assetList.forEach((asset) => {
+        const opt = document.createElement("option");
+        opt.value = asset.id;
+        opt.textContent = asset.asset_name;
+        select.appendChild(opt);
+    });
+    select.selectedIndex = 0;
+    handleAssetChange({ target: select });
+    select.addEventListener("change", handleAssetChange);
+}
+
+function handleAssetChange(e) {
+    const selectedId = parseInt(e.target.value);
+    const filteredModels = modelList.filter(m => m.asset_id === selectedId);
+    const modelSelect = document.getElementById("modelSelect");
+    modelSelect.innerHTML = '';
+    document.getElementById("typologySelect").innerHTML = '';
+
+    filteredModels.forEach((model) => {
+        const opt = document.createElement("option");
+        opt.value = model.id;
+        opt.textContent = model.model_name;
+        modelSelect.appendChild(opt);
+    });
+    modelSelect.selectedIndex = 0;
+    handleModelChange({ target: modelSelect });
+    modelSelect.addEventListener("change", handleModelChange);
+}
+
+function handleModelChange(e) {
+    const selectedModelId = parseInt(e.target.value);
+    const filteredTypologies = typologyList.filter(t => t.model_id === selectedModelId);
+    const typoSelect = document.getElementById("typologySelect");
+    typoSelect.innerHTML = '';
+
+    filteredTypologies.forEach((typo) => {
+        const opt = document.createElement("option");
+        opt.value = typo.id;
+        opt.textContent = typo.name;
+        typoSelect.appendChild(opt);
+    });
+    typoSelect.selectedIndex = 0;
+    if (filteredTypologies.length > 0) {
+        lastTypologyName = filteredTypologies[0].name;
+        loadFragilityCurves(filteredTypologies[0].id);
+    }
+    typoSelect.addEventListener("change", (e) => {
+        lastTypologyName = e.target.options[e.target.selectedIndex].text;
+        loadFragilityCurves(parseInt(e.target.value));
+    });
+
+    const ref = modelRefMap[selectedModelId] || "";
+    document.getElementById("referenceText").innerText = `📖 Reference: ${ref}`;
+}
+
+function loadFragilityCurves(typologyId) {
+    fetch(`/get-fragility-curves?typology_id=${typologyId}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) throw new Error(data.error);
+            plotCurves(data, typologyId);
+        })
+        .catch(err => console.error("Curve Load Error:", err));
+}
+
+function plotCurves(data, typologyId) {
+    const labels = data.imt;
+    const datasets = [];
+    const dsColors = ["#5DB565", "#f1c40f", "#e67e22", "#e74c3c", "#8e44ad"];
+
+    for (let i = 1; i <= data.ds_count; i++) {
+        const key = `ds${i}`;
+        const values = data.ds_curves[key];
+        if (Array.isArray(values)) {
+            datasets.push({
+                label: key.toUpperCase(),
+                data: values,
+                borderColor: dsColors[(i - 1) % dsColors.length],
+                borderWidth: 2,
+                fill: false,
+                tension: 0.25,
+                pointRadius: 0
+            });
+        }
+    }
+
+    if (chart) chart.destroy();
+    const ctx = document.getElementById("hcurve").getContext("2d");
+    chart = new Chart(ctx, {
+        type: "line",
+        data: { labels, datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: "bottom" },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const x = context.label;
+                            const y = context.raw;
+                            return `${context.dataset.label}: ${parseFloat(x).toFixed(2)} g → Poes = ${parseFloat(y).toFixed(2)}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: `${typologyIMTMap[typologyId] || "IMT"} (g)`
+                    },
+                    min: 0,
+                    max: Math.max(...data.imt),
+                    ticks: {
+                        callback: function(val) { return parseFloat(this.getLabelForValue(val)).toFixed(1); }
+                    }
+                },
+                y: {
+                    title: { display: true, text: "Probability of Exceedance" },
+                    min: 0,
+                    max: 1
+                }
+            }
+        }
+    });
+}
+
+const downloadBtn = document.getElementById("downloadButton");
+downloadBtn.addEventListener("click", () => {
+    const canvas = document.getElementById("hcurve");
+    const link = document.createElement("a");
+    link.download = `Aegis_fragility_${lastTypologyName.replace(/\s+/g, '_')}.png`;
+    link.href = canvas.toDataURL("image/png", 1.0);
+    link.click();
+});
+</script>
+
+{% endblock %}
