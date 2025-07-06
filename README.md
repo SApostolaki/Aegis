@@ -1,4 +1,4 @@
-Aegis: Seismic Hazard and Risk Web Application for Greece
+Aegis Web Application
 
 Aegis is a user-friendly web application developed as part of a PhD thesis to improve access to seismic hazard and risk information in Greece. Named after the mythological "Aegis" shield of protection, the app is designed to support informed decision-making for earthquake resilience, planning, and preparedness.
 
