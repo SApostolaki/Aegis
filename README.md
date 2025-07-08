@@ -24,7 +24,7 @@ Aegis allows users to interactively explore site-specific seismic hazard data, g
 🚀 Quick Start
 
 1) the repo:
-git clone https://github.com/your-username/aegis.git
+git clone https://github.com/SApostolaki/aegis.git
 cd aegis
 2) Install dependencies: pip install -r requirements.txt
 3) Run locally: flask run
