@@ -1,5 +1,6 @@
 Aegis Web Application
-![Aegis_logo](https://github.com/user-attachments/assets/1fb35c85-48e0-4840-95bd-c922ec8dcb21)
+
+![Aegis_logo - Copy](https://github.com/user-attachments/assets/d9199e9b-5ecb-4a8c-bd63-5bd89747c4ff)
 
 
 Aegis, named after the mythological shield symbolizing protection, is a web application designed to enhance the accessibility and usability of seismic hazard and risk information in Greece. Developed as part of a PhD thesis, it supports both researchers and non-expert users in exploring site-specific hazard outputs, as well as exposure and vulnerability data.
